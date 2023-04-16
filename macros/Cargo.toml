@@ -1,0 +1,21 @@
+[package]
+name = "covey_asset_loader_macros"
+version = "0.1.0"
+edition = "2021"
+authors = ["Chung Wong"]
+license = "MIT OR Apache-2.0"
+description = "Macros for covey_asset_loader"
+repository = "https://github.com/chungwong/covey_asset_loader"
+homepage = "https://github.com/chungwong/covey_asset_loader"
+documentation = "https://docs.rs/covey_asset_loader"
+keywords = ["bevy", "gamedev", "asset", "assets"]
+categories = ["game-development"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+bevy = { version = "0.10", default-features = false, features = ["bevy_asset"] }
+proc-macro2 = "1.0.56"
+quote = "1.0.26"
+syn = { version = "2.0.15", features = ["parsing"] }
