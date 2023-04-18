@@ -12,6 +12,8 @@ pub struct AssetLoaderEvent<R: Resource> {
     _marker: PhantomData<R>,
 }
 
+pub struct AssetLoaderFailureEvent<R: Resource>(pub PhantomData<R>);
+
 pub trait AssetLoaderAppExt {
     fn state_asset_loader<R, S>(&mut self) -> &mut Self
     where
@@ -58,6 +60,7 @@ impl AssetLoaderAppExt for App {
     {
         self.add_systems((check_assets::<R, S>.run_if(resource_exists::<LoadingAssets<R>>()),))
             .add_event::<AssetLoaderEvent<R>>()
+            .add_event::<AssetLoaderFailureEvent<R>>()
     }
 
     fn cleanup_assets_on_exit<R>(&mut self, state: impl AssetState) -> &mut Self
@@ -91,6 +94,7 @@ fn check_assets<R: Resource + Reflect + Struct, S: States + AssetState>(
     asset_server: Res<AssetServer>,
     assets: Res<R>,
     mut asset_event: EventWriter<AssetLoaderEvent<R>>,
+    mut fail_event: EventWriter<AssetLoaderFailureEvent<R>>,
     mut commands: Commands,
     mut next_state: ResMut<NextState<S>>,
     mut schedule_state: ResMut<ScheduleNextState<S>>,
@@ -111,12 +115,16 @@ fn check_assets<R: Resource + Reflect + Struct, S: States + AssetState>(
         match loading_state {
             LoadState::Loaded => true,
             LoadState::Failed => {
+                fail_event.send(AssetLoaderFailureEvent(PhantomData::<R>));
+                // no point checking the resource anymore
+                commands.remove_resource::<LoadingAssets<R>>();
+
                 error!(
                     "could not load asset {:?} in {:?}",
                     asset_server.get_handle_path(*handle_id),
                     PhantomData::<R>
                 );
-                commands.remove_resource::<LoadingAssets<R>>();
+
                 false
             }
             _ => false,
